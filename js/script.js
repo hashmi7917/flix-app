@@ -229,10 +229,11 @@ function displayBackgroundImage(type, backgroundPath) {
 // display slider movies
 async function displaySlider() {
   const { results } = await fetchAPIData('movie/now_playing');
-
+  showSpinner();
   results.forEach((movie) => {
     const div = document.createElement('div');
     div.classList.add('swiper-slide');
+
     div.innerHTML = `
     
     <a href="movie-details.html?id=${movie.id}">
@@ -244,7 +245,11 @@ async function displaySlider() {
   
     `;
     document.querySelector('.swiper-wrapper').appendChild(div);
-    initSwiper();
+
+    setTimeout(() => {
+      hideSpinner();
+      initSwiper();
+    }, 100);
   });
 }
 
@@ -252,16 +257,11 @@ function initSwiper() {
   const swiper = new Swiper('.swiper', {
     slidesPerView: 1,
     spaceBetween: 10,
-    effect: 'coverflow',
-    coverflowEffect: {
-      rotate: 30,
-      slideShadows: false,
-    },
     freeMode: true,
     loop: true,
-    autoPlay: {
-      delay: 4000,
-      disableOnInteraction: false,
+    speed: 4000,
+    autoplay: {
+      delay: 1000,
     },
     breakpoints: {
       '@0.75': {

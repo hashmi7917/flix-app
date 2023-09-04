@@ -197,11 +197,20 @@ section h2 {
 .swiper-slide {
   text-align: center;
   font-size: 18px;
-  background: var(--color-primary);
+  /* background: var(--color-primary); */
+  background: radial-gradient(100% 128.38% at 100% 100%, rgba(229, 236, 241, 0.2) 0%, rgba(76, 0, 200, 0.2) 100%);
+    box-shadow: rgba(39, 77, 153, 0.2) 0px 30px 60px, rgba(0, 0, 0, 0.2) 0px 0px 0px 0.5px inset;
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
+  border: 2px solid var(--color-primary);;
+}
+
+.swiper-slide:hover {
+  border-radius: 8px;
+  transition: all 0.5s ease-in-out;
+  background: #0a4b8f;
 }
 
 .swiper-slide img {
