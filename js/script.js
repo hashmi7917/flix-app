@@ -1,5 +1,15 @@
 const global = {
   currentPage: window.location.pathname,
+  search: {
+    term: '',
+    type: '',
+    page: 1,
+    totalPages: 1,
+  },
+  api: {
+    apiKey: '7d5420ba78d8b98d6315cc6c96785bed',
+    apiUrl: 'https://api.themoviedb.org/3/',
+  },
 };
 
 async function displayPopularMovies() {
@@ -226,6 +236,60 @@ function displayBackgroundImage(type, backgroundPath) {
   }
 }
 
+// search movie/tvshow
+async function search() {
+  const queryString = window.location.search;
+  const urlParams = new URLSearchParams(queryString);
+  global.search.type = urlParams.get('type');
+  global.search.term = urlParams.get('search-term');
+
+  if (global.search.term !== '' && global.search.term !== null) {
+    // todo make request and dis[lay results
+    const { results, totalPages, page } = await searchApiData();
+    //fetch data of search
+    if (results.length === 0) {
+      showAlert('No result found', 'success');
+      return;
+    }
+    displaySearchResult(results);
+    document.querySelector('#search-term').value = '';
+  } else {
+    showAlert('plz enter movie / tv to search', 'error');
+  }
+}
+
+async function displaySearchResult(results) {
+  results.forEach((movie) => {
+    console.log(movie);
+    const div = document.createElement('div');
+    div.classList.add('card');
+    div.innerHTML = `
+    <a href="movie-details.html?id=${movie.id}">
+    ${
+      movie.poster_path
+        ? `<img
+        src="https://image.tmdb.org/t/p/w500${movie.poster_path}"
+        class="card-img-top"
+        alt="${movie.title}"
+      />`
+        : `<img
+      src="images/no-image.jpg"
+      class="card-img-top"
+      alt="${movie.title}"
+    />`
+    }
+  </a>
+  <div class="card-body">
+    <h5 class="card-title">${movie.title}</h5>
+    <p class="card-text">
+      <small class="text-muted">Release: ${movie.release_date}</small>
+    </p>
+  </div>
+    `;
+    document.querySelector('#search-results').appendChild(div);
+  });
+}
+
 // display slider movies
 async function displaySlider() {
   const { results } = await fetchAPIData('movie/now_playing');
@@ -246,10 +310,11 @@ async function displaySlider() {
     `;
     document.querySelector('.swiper-wrapper').appendChild(div);
 
+    // initSwiper();
     setTimeout(() => {
-      hideSpinner();
       initSwiper();
-    }, 100);
+      hideSpinner();
+    }, 10);
   });
 }
 
@@ -261,12 +326,16 @@ function initSwiper() {
     loop: true,
     speed: 4000,
     autoplay: {
-      delay: 1000,
+      delay: 100,
     },
     breakpoints: {
       '@0.75': {
-        slidesPerView: 2,
+        slidesPerView: 1,
         spaceBetween: 20,
+      },
+      '@0.90': {
+        slidesPerView: 2,
+        spaceBetween: 30,
       },
       '@1.00': {
         slidesPerView: 3,
@@ -282,8 +351,8 @@ function initSwiper() {
 
 // fetch data from tmdb api
 async function fetchAPIData(endpoint) {
-  const API_KEY = '7d5420ba78d8b98d6315cc6c96785bed';
-  const API_URL = 'https://api.themoviedb.org/3/';
+  const API_KEY = global.api.apiKey;
+  const API_URL = global.api.apiUrl;
 
   showSpinner();
   const response = await fetch(
@@ -293,6 +362,19 @@ async function fetchAPIData(endpoint) {
   setTimeout(() => {
     hideSpinner();
   }, 500);
+  return data;
+}
+
+async function searchApiData() {
+  const API_KEY = global.api.apiKey;
+  const API_URL = global.api.apiUrl;
+
+  showSpinner();
+  const response = await fetch(
+    `${API_URL}search/${global.search.type}?api_key=${API_KEY}&language=en-US&query=${global.search.term}`
+  );
+  const data = await response.json();
+  hideSpinner();
   return data;
 }
 
@@ -311,6 +393,17 @@ function highLightActiveLink() {
       link.classList.add('active');
     }
   });
+}
+
+// show alert
+function showAlert(message, className = 'error') {
+  const alertEl = document.createElement('div');
+  alertEl.classList.add('alert', className);
+  alertEl.appendChild(document.createTextNode(message));
+  document.querySelector('#alert').appendChild(alertEl);
+  setTimeout(() => {
+    alertEl.remove();
+  }, 1000);
 }
 
 function addCommasToNumber(number) {
@@ -335,7 +428,7 @@ function init() {
       displayShowDetails();
       break;
     case '/search.html':
-      console.log('Search');
+      search();
       break;
   }
 
