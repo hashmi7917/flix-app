@@ -5,6 +5,7 @@ const global = {
     type: '',
     page: 1,
     totalPages: 1,
+    totalResults: 0,
   },
   api: {
     apiKey: '7d5420ba78d8b98d6315cc6c96785bed',
@@ -245,7 +246,13 @@ async function search() {
 
   if (global.search.term !== '' && global.search.term !== null) {
     // todo make request and dis[lay results
-    const { results, totalPages, page } = await searchApiData();
+    const { results, total_pages, page, total_results } = await searchApiData();
+
+    // total pages to show in pagination
+    global.search.page = page;
+    global.search.totalPages = total_pages;
+    global.search.totalResults = total_results;
+
     //fetch data of search
     if (results.length === 0) {
       showAlert('No result found', 'success');
@@ -259,6 +266,12 @@ async function search() {
 }
 
 async function displaySearchResult(results) {
+  // clear previous result
+
+  document.querySelector('#search-results').innerHTML = '';
+  document.querySelector('#search-results-heading').innerHTML = '';
+  document.querySelector('#pagination').innerHTML = '';
+
   results.forEach((result) => {
     if (global.search.type === 'tv') {
       document.querySelector('#tv').checked = true;
@@ -294,14 +307,56 @@ async function displaySearchResult(results) {
     </p>
   </div>
     `;
+    document.querySelector('#search-results-heading').innerHTML = `
+      <h2>${results.length} of ${global.search.totalResults} Results for ${global.search.term}</h2>
+    `;
     document.querySelector('#search-results').appendChild(div);
+  });
+
+  displayPagination();
+}
+
+// display pagination
+function displayPagination() {
+  const div = document.createElement('div');
+  div.classList.add('pagination');
+  div.innerHTML = `
+  <button class="btn btn-primary" id="prev">Prev</button>
+  <button class="btn btn-primary" id="next">Next</button>
+  <div class="page-counter">Page ${global.search.page} of ${global.search.totalPages}</div>
+  `;
+  document.querySelector('#pagination').appendChild(div);
+
+  // disable prev on if first page
+  if (global.search.page === 1) {
+    document.querySelector('#prev').disabled = true;
+  }
+
+  // disab;e next button if on last page
+
+  if (global.search.page === global.search.totalPages) {
+    document.querySelector('#next').disabled = true;
+  }
+
+  // next pgae
+  document.querySelector('#next').addEventListener('click', async () => {
+    global.search.page++;
+    const { results, total_pages } = await searchApiData();
+    displaySearchResult(results);
+  });
+
+  // previous page
+  document.querySelector('#prev').addEventListener('click', async () => {
+    global.search.page--;
+    const { results, total_pages } = await searchApiData();
+    displaySearchResult(results);
   });
 }
 
 // display slider movies
 async function displaySlider() {
   const { results } = await fetchAPIData('movie/now_playing');
-  showSpinner();
+
   results.forEach((movie) => {
     const div = document.createElement('div');
     div.classList.add('swiper-slide');
@@ -316,10 +371,12 @@ async function displaySlider() {
     </h4>
   
     `;
+
     document.querySelector('.swiper-wrapper').appendChild(div);
 
     // initSwiper();
     setTimeout(() => {
+      showSpinner();
       initSwiper();
       hideSpinner();
     }, 10);
@@ -379,7 +436,7 @@ async function searchApiData() {
 
   showSpinner();
   const response = await fetch(
-    `${API_URL}search/${global.search.type}?api_key=${API_KEY}&language=en-US&query=${global.search.term}`
+    `${API_URL}search/${global.search.type}?api_key=${API_KEY}&language=en-US&query=${global.search.term}&page=${global.search.page}`
   );
   const data = await response.json();
   hideSpinner();
